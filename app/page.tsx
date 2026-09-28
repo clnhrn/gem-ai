@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 
-type Source = { text?: string; page?: number; score?: number };
+type Source = { text?: string; page?: number; source?: string; score?: number };
 
 export default function Page() {
   const { messages, input, handleInputChange, handleSubmit, status, error } = useChat({
@@ -12,9 +12,9 @@ export default function Page() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Acme Spec Bot</h1>
+        <h1 className="text-2xl font-bold text-slate-900">GemAI</h1>
         <p className="text-sm text-slate-500">
-          Ask questions about the Acme Widget API. Sources appear under each answer.
+          Ask questions about gemstones — properties, identification, and occurrences. Sources appear under each answer.
         </p>
       </header>
 
@@ -57,7 +57,7 @@ export default function Page() {
                             className="border-l-2 border-cyan-500 pl-3"
                           >
                             <span className="text-xs text-slate-400">
-                              page {src.page ?? '?'} · score{' '}
+                              {src.source ?? 'unknown'} · p.{src.page ?? '?'} · score{' '}
                               {typeof src.score === 'number'
                                 ? src.score.toFixed(2)
                                 : '—'}
@@ -86,7 +86,7 @@ export default function Page() {
           value={input}
           onChange={handleInputChange}
           className="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500"
-          placeholder="Ask about authentication, rate limits, error codes…"
+          placeholder="Ask about gemstones — e.g. Where are sapphires found in the US?"
           disabled={status === 'streaming' || status === 'submitted'}
         />
         <button
