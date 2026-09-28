@@ -3,7 +3,16 @@
 @tailwind utilities;
 
 html, body { height: 100%; }
-body { background: #f8fafc; color: #0f172a; }
+body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+}
 
 .line-clamp-3 {
   display: -webkit-box;
