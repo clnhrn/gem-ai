@@ -52,15 +52,55 @@ function useTheme() {
 }
 
 export default function Page() {
-  const { messages, input, handleInputChange, handleSubmit, status, error, setInput } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, status, error, setInput, setMessages } = useChat({
     api: '/api/chat',
   });
   const { theme, cycle, mounted } = useTheme();
+  const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
 
   const isEmpty = messages.length === 0;
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+      {/* New Chat Confirmation Modal */}
+      {showNewChatConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowNewChatConfirm(false)}
+          />
+          <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl dark:shadow-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full mx-4 animate-modal-in">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center">
+                <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Start new chat?</h3>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+              This will clear the current conversation. This action cannot be undone.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowNewChatConfirm(false)}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setMessages([]);
+                  setShowNewChatConfirm(false);
+                }}
+                className="rounded-xl px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
+              >
+                New chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="border-b border-slate-200/80 dark:border-slate-700/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md sticky top-0 z-10">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 py-3 flex items-center gap-3">
@@ -71,6 +111,18 @@ export default function Page() {
             <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight tracking-tight">GemAI</h1>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">Gemstone knowledge assistant</p>
           </div>
+          {messages.length > 0 && (
+            <button
+              onClick={() => setShowNewChatConfirm(true)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="New chat"
+              aria-label="Start a new chat"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+              </svg>
+            </button>
+          )}
           {mounted && (
             <button
               onClick={cycle}

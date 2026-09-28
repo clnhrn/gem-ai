@@ -28,6 +28,13 @@ body {
 .prose li { margin-top: 0; margin-bottom: 0; }
 .prose h1, .prose h2, .prose h3 { margin-top: 0.75em; margin-bottom: 0.25em; }
 .prose h1:first-child, .prose h2:first-child, .prose h3:first-child { margin-top: 0; }
+/* Modal entrance animation */
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-modal-in { animation: modal-in 0.15s ease-out; }
+
 .prose table { font-size: 0.8125rem; }
 .prose pre { font-size: 0.8125rem; border-radius: 0.5rem; }
 .prose code { font-size: 0.8125rem; }
