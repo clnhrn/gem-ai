@@ -1,58 +1,81 @@
-# Week 14A · Next.js RAG starter
+# GemAI
 
-A streaming chat app on top of your knowledge base, built with [Next.js 15](https://nextjs.org/), the [Vercel AI SDK](https://sdk.vercel.ai/), and [Upstash Vector](https://upstash.com/docs/vector). This is the working solution for Section 4 of Week 14A.
+A streaming RAG chatbot that answers questions about gemstones using USGS publications and the Smithsonian gem collection. Built with [Next.js 15](https://nextjs.org/), the [Vercel AI SDK](https://sdk.vercel.ai/), and [Upstash Vector](https://upstash.com/docs/vector).
+
+## Features
+
+- Streaming responses via the Vercel AI SDK (`streamText`)
+- RAG implemented as a tool call — the model decides when to retrieve
+- Collapsible source citations with page numbers and similarity scores
+- Light / dark / system theme toggle
+- Suggested prompt chips on the empty state
+- Markdown rendering with GFM support
+- New-chat confirmation dialog
 
 ## What's here
 
 ```
-14A-nextjs-rag/
+gem-ai/
 ├── app/
 │   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx                          # FINAL UI — useChat + sources
-│   └── api/chat/route.ts                 # FINAL handler — RAG-as-tool-call
+│   ├── layout.tsx                          # Root layout with OG metadata & theme script
+│   ├── page.tsx                            # Chat UI — useChat, sources, theme toggle
+│   ├── icon.svg
+│   └── api/chat/route.ts                   # Route handler — RAG-as-tool-call (gpt-4o-mini)
 ├── lib/
-│   └── seed.ts                           # Embeds data/sample.pdf into Upstash
+│   └── seed.ts                             # Chunks & embeds PDFs into Upstash Vector
 ├── data/
-│   └── sample.pdf                        # Synthetic Acme Widget Spec
-├── steps/                                # Reference snapshots per workshop step
+│   ├── usgs-natural-gemstones.pdf          # USGS General Interest Publication
+│   ├── usgs-gemstones-mcs-2026.pdf         # USGS Mineral Commodity Summary 2026
+│   └── smithsonian-gems.pdf               # Project Gutenberg — Smithsonian gem collection
+├── scripts/
+│   └── download_pdfs.py                    # Downloads the three source PDFs
+├── notebooks/
+│   └── rag-evaluation.ipynb               # RAG evaluation notebook
+├── docs/
+│   ├── graded-project-brief.md
+│   └── plan.md
+├── steps/                                  # Reference snapshots per workshop step
 │   ├── step2-plain-chat/
-│   │   ├── page.tsx                      # Step 2: useChat client component
-│   │   └── route.ts                      # Step 2: vanilla streamText handler
+│   │   ├── page.tsx                        # Step 2: useChat + vanilla streamText
+│   │   └── route.ts
 │   ├── step4-rag-as-tool/
-│   │   └── route.ts                      # Step 4: route handler with the tool
+│   │   └── route.ts                        # Step 4: route handler with retrieval tool
 │   └── step5-sources/
-│       └── page.tsx                      # Step 5: page with <details> sources
+│       └── page.tsx                        # Step 5: sources UI
 ├── package.json
 ├── tsconfig.json
 ├── next.config.mjs
 ├── postcss.config.mjs
 ├── tailwind.config.ts
 ├── .env.example
-├── .gitignore
 └── README.md
 ```
 
-
-
-## Setup (5 minutes)
+## Setup
 
 ```bash
-# 1. install
+# 1. Install dependencies
 npm install
 
-# 2. environment
+# 2. Environment variables
 cp .env.example .env.local
-# edit .env.local and paste your real OPENAI_API_KEY,
-# UPSTASH_VECTOR_REST_URL, UPSTASH_VECTOR_REST_TOKEN
+# Fill in your keys:
+#   OPENAI_API_KEY
+#   UPSTASH_VECTOR_REST_URL
+#   UPSTASH_VECTOR_REST_TOKEN
 
-# 3. seed the vector index (one-time, or whenever data/sample.pdf changes)
+# 3. (Optional) Download the source PDFs
+pip install tqdm fpdf2
+python scripts/download_pdfs.py
+
+# 4. Seed the vector index
 npm run seed
 ```
 
-The seed script reads `data/sample.pdf`, chunks it, embeds each chunk with `text-embedding-3-small`, and upserts to your Upstash Vector index. Re-running it overwrites the same ids, so it's idempotent.
+The seed script reads all PDFs in `data/`, chunks them (~800 chars with 100-char overlap), embeds with `text-embedding-3-small`, and upserts to Upstash Vector. Re-running overwrites the same ids, so it's idempotent.
 
-## Run the final app
+## Run
 
 ```bash
 npm run dev
@@ -61,59 +84,66 @@ npm run dev
 
 Try asking:
 
-- *"What auth methods does the API support?"*
-- *"What happens when I exceed the rate limit?"*
-- *"Compare OAuth2 and API key authentication."*
+- *"What is the Hope Diamond?"*
+- *"How do you identify a sapphire?"*
+- *"What gemstones are found in Montana?"*
+- *"What makes a mineral a gemstone?"*
 
-You should see tokens stream into the assistant bubble, then a **Sources (N)** disclosure beneath it. Expanding it shows page numbers, similarity scores, and the chunk text the model retrieved.
+Answers stream into the chat, with a collapsible **Sources** section showing page numbers, similarity scores, and the retrieved chunk text.
 
-## Walk through the steps
+## Corpus
 
-The `/steps` folder contains reference snapshots. To try them, copy each file over the matching path in `app/`:
+The knowledge base consists of three public-domain PDFs about gemstones:
 
+| Document | Source | Pages |
+| --- | --- | --- |
+| Natural Gemstones | USGS General Interest Publication | ~30 |
+| Gemstones MCS 2026 | USGS Mineral Commodity Summary | ~2 |
+| Gems & Precious Stones | Smithsonian / Project Gutenberg | ~150 |
 
-| Step | Files to copy                                                | What it shows                              |
-| ---- | ------------------------------------------------------------ | ------------------------------------------ |
-| 2    | `steps/step2-plain-chat/page.tsx` → `app/page.tsx`           | useChat working against vanilla streamText |
-|      | `steps/step2-plain-chat/route.ts` → `app/api/chat/route.ts`  | (no RAG yet — verify streaming first)      |
-| 4    | `steps/step4-rag-as-tool/route.ts` → `app/api/chat/route.ts` | The model decides when to call retrieval   |
-| 5    | `steps/step5-sources/page.tsx` → `app/page.tsx`              | Sources rendered below answers             |
+## Tech stack
 
-
-After Step 5, the snapshots and the final `app/page.tsx` + `app/api/chat/route.ts` are the same shape — the final versions add a small system prompt and some chrome (a header, slightly nicer styling, status / error rendering).
-
-## Use your own corpus
-
-1. Replace `data/sample.pdf` with your own PDF.
-2. Re-run `npm run seed`.
-3. Restart `npm run dev`.
-
-For multi-PDF, multi-version, or permission-aware retrieval see Week 14B Section 4.
+| Layer | Technology |
+| --- | --- |
+| Framework | Next.js 15 (App Router) |
+| AI SDK | Vercel AI SDK v4 (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`) |
+| Model | GPT-4o-mini |
+| Embeddings | text-embedding-3-small |
+| Vector DB | Upstash Vector |
+| Styling | Tailwind CSS + `@tailwindcss/typography` |
+| Markdown | react-markdown + remark-gfm |
 
 ## Deploy to Vercel
 
 ```bash
-npm i -g vercel  # if you don't have it
-vercel           # first run: log in, link the project
-vercel link
+npm i -g vercel
+vercel
 vercel env add OPENAI_API_KEY
 vercel env add UPSTASH_VECTOR_REST_URL
 vercel env add UPSTASH_VECTOR_REST_TOKEN
 vercel --prod
 ```
 
-You'll get a public URL like `https://rag-ui-xxx.vercel.app`. The seed is local — you only need to seed once per index, regardless of where the chat app is hosted.
+The seed step is local — you only need to seed once per index, regardless of where the app is hosted.
+
+## Walk through the steps
+
+The `steps/` folder contains reference snapshots from the workshop. To try them, copy each file over the matching path in `app/`:
+
+| Step | Files to copy | What it shows |
+| --- | --- | --- |
+| 2 | `steps/step2-plain-chat/page.tsx` → `app/page.tsx` | useChat with vanilla streamText |
+|   | `steps/step2-plain-chat/route.ts` → `app/api/chat/route.ts` | (no RAG — verify streaming first) |
+| 4 | `steps/step4-rag-as-tool/route.ts` → `app/api/chat/route.ts` | Model decides when to call retrieval |
+| 5 | `steps/step5-sources/page.tsx` → `app/page.tsx` | Sources rendered below answers |
 
 ## Common errors
 
-
-| Symptom                                            | Fix                                                                |
-| -------------------------------------------------- | ------------------------------------------------------------------ |
-| `Error: missing UPSTASH_VECTOR_REST_URL`           | Run `npm run seed` after setting `.env.local`. Verify in Upstash.  |
-| Page renders but submitting hangs                  | Route handler missing `toDataStreamResponse()`. Check `route.ts`.  |
-| Empty / very short answer after a tool call        | `maxSteps` not set or set to 1. Set `maxSteps: 3` on `streamText`. |
-| `Cannot use useChat in a Server Component`         | Forgot `'use client'` at the top of `page.tsx`.                    |
-| Build error: `Type '...' is not assignable to ...` | Run `npx tsc --noEmit` to see the full type error.                 |
-| `vercel --prod` build fails on missing env vars    | `vercel env add ...` and pick **Production** when prompted.        |
-
-
+| Symptom | Fix |
+| --- | --- |
+| `Error: missing UPSTASH_VECTOR_REST_URL` | Set `.env.local` and re-run `npm run seed`. |
+| Page renders but submitting hangs | Check that `route.ts` returns `toDataStreamResponse()`. |
+| Empty answer after a tool call | Set `maxSteps: 3` on `streamText`. |
+| `Cannot use useChat in a Server Component` | Add `'use client'` at the top of `page.tsx`. |
+| Build error: type mismatch | Run `npx tsc --noEmit` for the full error. |
+| `vercel --prod` fails on missing env vars | `vercel env add ...` and pick **Production**. |
