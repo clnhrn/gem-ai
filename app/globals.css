@@ -4,3 +4,21 @@
 
 html, body { height: 100%; }
 body { background: #f8fafc; color: #0f172a; }
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Tighten prose inside chat bubbles */
+.prose p:first-child { margin-top: 0; }
+.prose p:last-child { margin-bottom: 0; }
+.prose ul, .prose ol { margin-top: 0.25em; margin-bottom: 0.25em; }
+.prose li { margin-top: 0; margin-bottom: 0; }
+.prose h1, .prose h2, .prose h3 { margin-top: 0.75em; margin-bottom: 0.25em; }
+.prose h1:first-child, .prose h2:first-child, .prose h3:first-child { margin-top: 0; }
+.prose table { font-size: 0.8125rem; }
+.prose pre { font-size: 0.8125rem; border-radius: 0.5rem; }
+.prose code { font-size: 0.8125rem; }
