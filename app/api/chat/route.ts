@@ -19,15 +19,17 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openai('gpt-4o-mini'),
     system:
-      'You are a helpful assistant for the Acme Widget API specification. ' +
-      'Use the getInformation tool whenever the user asks a question whose ' +
-      'answer might be in the spec. If the spec does not cover something, ' +
-      'say so directly rather than guessing.',
+      'You are GemAI, a knowledgeable assistant specializing in gemstones. ' +
+      'Your knowledge comes from USGS gemstone publications and the Smithsonian ' +
+      'Institution gem collection reference. Use the getInformation tool whenever ' +
+      'the user asks about gemstone properties, identification, occurrences, history, ' +
+      'or production. If the sources do not cover something, say so directly rather ' +
+      'than guessing.',
     messages,
     tools: {
       getInformation: tool({
         description:
-          'Look up information from the Acme Widget API spec. Use this whenever the user asks a substantive question about the API, its endpoints, auth, rate limits, or behavior.',
+          'Look up information about gemstones from USGS publications and the Smithsonian gem collection reference. Use this whenever the user asks about gemstone properties, identification, types, occurrences, uses, history, or production data.',
         parameters: z.object({
           query: z
             .string()
@@ -46,6 +48,7 @@ export async function POST(req: Request) {
           return hits.map((h) => ({
             text: (h.metadata?.text as string) ?? '',
             page: (h.metadata?.page as number) ?? null,
+            source: (h.metadata?.source as string) ?? '',
             score: h.score,
           }));
         },
