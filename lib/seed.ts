@@ -1,10 +1,10 @@
 /**
- * Seed Upstash Vector with chunks from data/sample.pdf.
+ * Seed Upstash Vector with chunks from all PDFs in data/.
  *
  * Run once before starting the chat:
  *   npm run seed
  *
- * Re-run any time you replace data/sample.pdf with a different document.
+ * Re-run any time you add or replace PDFs in data/.
  * Existing chunks are overwritten by id (we use deterministic ids).
  */
 import { config as loadEnv } from 'dotenv';
@@ -19,29 +19,28 @@ import { openai } from '@ai-sdk/openai';
 // pdf-parse uses CommonJS; default-import the parser fn
 import pdfParse from 'pdf-parse';
 
-const PDF_PATH = path.join(process.cwd(), 'data', 'sample.pdf');
+const DATA_DIR = path.join(process.cwd(), 'data');
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
 
-type Chunk = { text: string; page: number };
+type Chunk = { text: string; page: number; source: string };
 
 /**
  * Naive but adequate chunker: split text into ~800-char windows with 100-char
  * overlap, attempting to break on sentence boundaries when possible.
  */
-function chunkText(text: string, page: number): Chunk[] {
+function chunkText(text: string, page: number, source: string): Chunk[] {
   const out: Chunk[] = [];
   let i = 0;
   while (i < text.length) {
     let end = Math.min(text.length, i + CHUNK_SIZE);
-    // Try to extend to the next sentence boundary if we're not at the end.
     if (end < text.length) {
       const lookahead = text.slice(end, end + 200);
       const m = lookahead.match(/[.!?]\s/);
       if (m && m.index !== undefined) end += m.index + 1;
     }
     const piece = text.slice(i, end).trim();
-    if (piece.length > 0) out.push({ text: piece, page });
+    if (piece.length > 0) out.push({ text: piece, page, source });
     if (end >= text.length) break;
     i = end - CHUNK_OVERLAP;
   }
@@ -49,17 +48,32 @@ function chunkText(text: string, page: number): Chunk[] {
 }
 
 async function loadAndChunkPdf(filePath: string): Promise<Chunk[]> {
+  const source = path.basename(filePath);
   const buf = await fs.readFile(filePath);
   const parsed = await pdfParse(buf);
-  // pdf-parse returns the whole document as one string. We approximate
-  // page numbers by splitting on form-feed (which pdf-parse inserts between pages).
   const pages = parsed.text.split('\f');
   const chunks: Chunk[] = [];
   pages.forEach((pageText, pageIdx) => {
     if (pageText.trim().length === 0) return;
-    chunks.push(...chunkText(pageText.trim(), pageIdx + 1));
+    chunks.push(...chunkText(pageText.trim(), pageIdx + 1, source));
   });
   return chunks;
+}
+
+async function loadAllPdfs(): Promise<Chunk[]> {
+  const files = (await fs.readdir(DATA_DIR)).filter(f => f.endsWith('.pdf')).sort();
+  if (files.length === 0) {
+    console.error('No PDF files found in data/. Run the download script first.');
+    process.exit(1);
+  }
+  const allChunks: Chunk[] = [];
+  for (const file of files) {
+    const filePath = path.join(DATA_DIR, file);
+    const chunks = await loadAndChunkPdf(filePath);
+    console.log(`  ${file}: ${chunks.length} chunks`);
+    allChunks.push(...chunks);
+  }
+  return allChunks;
 }
 
 async function main() {
@@ -72,9 +86,9 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Loading and chunking ${PDF_PATH}…`);
-  const chunks = await loadAndChunkPdf(PDF_PATH);
-  console.log(`  produced ${chunks.length} chunks across ${new Set(chunks.map(c => c.page)).size} page(s)`);
+  console.log(`Loading and chunking PDFs from ${DATA_DIR}…`);
+  const chunks = await loadAllPdfs();
+  console.log(`  total: ${chunks.length} chunks from ${new Set(chunks.map(c => c.source)).size} file(s)`);
 
   console.log('Embedding…');
   const { embeddings } = await embedMany({
@@ -86,7 +100,7 @@ async function main() {
   const records = chunks.map((c, i) => ({
     id: `chunk_${i}`,
     vector: embeddings[i],
-    metadata: { text: c.text, page: c.page },
+    metadata: { text: c.text, page: c.page, source: c.source },
   }));
 
   console.log(`Upserting ${records.length} chunks to Upstash Vector…`);
