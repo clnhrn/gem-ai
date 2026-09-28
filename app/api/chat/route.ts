@@ -45,7 +45,7 @@ Rules:
           });
           const hits = await index.query({
             vector: embedding,
-            topK: 4,
+            topK: 8,
             includeMetadata: true,
           });
           return hits.map((h) => ({
