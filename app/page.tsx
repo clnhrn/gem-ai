@@ -189,7 +189,7 @@ export default function Page() {
                         <p>{m.content}</p>
                       </div>
                     </div>
-                  ) : (
+                  ) : m.content ? (
                     <div className="flex justify-start flex-col items-start gap-2">
                       <div className="rounded-2xl rounded-bl-md bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 px-4 py-3 max-w-[85%] shadow-sm prose prose-sm prose-slate dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-teal-600 dark:prose-a:text-teal-400 max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -240,7 +240,7 @@ export default function Page() {
                           ),
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </li>
               ))}
               {(status === 'streaming' || status === 'submitted') && !messages.at(-1)?.content && (
