@@ -1,6 +1,5 @@
-# GemAI
-
-A streaming RAG chatbot that answers questions about gemstones using USGS publications and the Smithsonian gem collection. Built with [Next.js 15](https://nextjs.org/), the [Vercel AI SDK](https://sdk.vercel.ai/), and [Upstash Vector](https://upstash.com/docs/vector).
+<h1 align="center">💎 GemAI</h1>
+<p align="center">A streaming RAG chatbot that answers questions about gemstones using USGS publications and the Smithsonian gem collection.<br>Built with <a href="https://nextjs.org/">Next.js 15</a>, the <a href="https://sdk.vercel.ai/">Vercel AI SDK</a>, and <a href="https://upstash.com/docs/vector">Upstash Vector</a>.</p>
 
 ## Features
 
