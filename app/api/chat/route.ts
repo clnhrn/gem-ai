@@ -13,8 +13,46 @@ import { z } from 'zod';
 
 const index = new Index();
 
+const messageSchema = z.object({
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant', 'system']),
+        content: z.string().max(4000),
+      })
+    )
+    .max(50),
+});
+
+const rateLimit = new Map<string, number[]>();
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS = 10;
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = (rateLimit.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  if (timestamps.length >= MAX_REQUESTS) return true;
+  timestamps.push(now);
+  rateLimit.set(ip, timestamps);
+  return false;
+}
+
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    req.headers.get('x-real-ip') ??
+    'unknown';
+
+  if (isRateLimited(ip)) {
+    return new Response('Too many requests. Please wait a moment.', { status: 429 });
+  }
+
+  const body = await req.json();
+  const parsed = messageSchema.safeParse(body);
+  if (!parsed.success) {
+    return new Response('Invalid request', { status: 400 });
+  }
+  const { messages } = parsed.data;
 
   const result = streamText({
     model: openai('gpt-4o-mini'),
@@ -58,6 +96,7 @@ Rules:
       }),
     },
     maxSteps: 3,
+    maxTokens: 1024,
   });
 
   return result.toDataStreamResponse();
