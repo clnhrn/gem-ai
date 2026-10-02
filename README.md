@@ -11,6 +11,7 @@ A streaming RAG chatbot that answers questions about gemstones using USGS public
 - Suggested prompt chips on the empty state
 - Markdown rendering with GFM support
 - New-chat confirmation dialog
+- Rate limiting (10 req/min per IP) and input validation on the chat API
 
 ## What's here
 
@@ -32,17 +33,8 @@ gem-ai/
 │   └── download_pdfs.py                    # Downloads the three source PDFs
 ├── notebooks/
 │   └── rag-evaluation.ipynb               # RAG evaluation notebook
-├── docs/
-│   ├── graded-project-brief.md
-│   └── plan.md
-├── steps/                                  # Reference snapshots per workshop step
-│   ├── step2-plain-chat/
-│   │   ├── page.tsx                        # Step 2: useChat + vanilla streamText
-│   │   └── route.ts
-│   ├── step4-rag-as-tool/
-│   │   └── route.ts                        # Step 4: route handler with retrieval tool
-│   └── step5-sources/
-│       └── page.tsx                        # Step 5: sources UI
+├── .github/workflows/
+│   └── build.yml                           # CI build check on PRs
 ├── package.json
 ├── tsconfig.json
 ├── next.config.mjs
@@ -125,17 +117,6 @@ vercel --prod
 ```
 
 The seed step is local — you only need to seed once per index, regardless of where the app is hosted.
-
-## Walk through the steps
-
-The `steps/` folder contains reference snapshots from the workshop. To try them, copy each file over the matching path in `app/`:
-
-| Step | Files to copy | What it shows |
-| --- | --- | --- |
-| 2 | `steps/step2-plain-chat/page.tsx` → `app/page.tsx` | useChat with vanilla streamText |
-|   | `steps/step2-plain-chat/route.ts` → `app/api/chat/route.ts` | (no RAG — verify streaming first) |
-| 4 | `steps/step4-rag-as-tool/route.ts` → `app/api/chat/route.ts` | Model decides when to call retrieval |
-| 5 | `steps/step5-sources/page.tsx` → `app/page.tsx` | Sources rendered below answers |
 
 ## Common errors
 
