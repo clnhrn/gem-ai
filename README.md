@@ -42,7 +42,8 @@ gem-ai/
 ├── scripts/
 │   └── download_pdfs.py                    # Downloads the three source PDFs
 ├── notebooks/
-│   └── rag-evaluation.ipynb               # RAG evaluation notebook
+│   ├── rag-evaluation.ipynb               # v1: chose chunk size 800/100 and topK 8
+│   └── rag-evaluation-v2.ipynb            # v2: app chunker vs old splitter, citations, search decision
 ├── .github/workflows/
 │   └── build.yml                           # CI build check on PRs
 ├── package.json
