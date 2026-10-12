@@ -37,6 +37,7 @@ gem-ai/
 │   ├── layout.tsx                          # Root layout with OG metadata & theme script
 │   ├── page.tsx                            # Chat UI — useChat, sources, theme toggle
 │   ├── icon.svg
+│   ├── opengraph-image.tsx                 # Generated Open Graph preview image
 │   └── api/chat/route.ts                   # Route handler — RAG-as-tool-call (gpt-4.1-mini)
 ├── lib/
 │   └── seed.ts                             # Chunks & embeds PDFs into Upstash Vector
