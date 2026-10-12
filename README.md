@@ -16,7 +16,7 @@
 
 - Streaming responses via the Vercel AI SDK (`streamText`)
 - RAG implemented as a tool call — the model decides when to retrieve
-- Collapsible source citations with page numbers and similarity scores
+- Numbered inline citations linked to source cards showing document title, page number, and passage text
 - Light / dark / system theme toggle
 - Suggested prompt chips on the empty state
 - Markdown rendering with GFM support
@@ -75,7 +75,7 @@ python scripts/download_pdfs.py
 npm run seed
 ```
 
-The seed script reads all PDFs in `data/`, chunks them (~800 chars with 100-char overlap), embeds with `text-embedding-3-small`, and upserts to Upstash Vector. Re-running overwrites the same ids, so it's idempotent.
+The seed script reads all PDFs in `data/`, extracts text page by page, chunks each page (~800 chars with 100-char overlap), embeds with `text-embedding-3-small`, and upserts to Upstash Vector with the page number in each chunk's metadata. The index is reset before upserting, so each run fully replaces its contents.
 
 ## Run
 
@@ -91,7 +91,7 @@ Try asking:
 - *"What gemstones are found in Montana?"*
 - *"What makes a mineral a gemstone?"*
 
-Answers stream into the chat, with a collapsible **Sources** section showing page numbers, similarity scores, and the retrieved chunk text.
+Answers stream into the chat with inline citations like [1]. The passages the answer cites are listed under it with their document title and page number; the remaining retrieved passages are in a collapsible section.
 
 ## Corpus
 

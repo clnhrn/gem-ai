@@ -5,7 +5,7 @@
  *   npm run seed
  *
  * Re-run any time you add or replace PDFs in data/.
- * Existing chunks are overwritten by id (we use deterministic ids).
+ * The index is reset before upserting, so each run fully replaces its contents.
  */
 import { config as loadEnv } from 'dotenv';
 import fs from 'node:fs/promises';
@@ -47,14 +47,41 @@ function chunkText(text: string, page: number, source: string): Chunk[] {
   return out;
 }
 
+type PageData = {
+  pageIndex: number;
+  getTextContent: () => Promise<{ items: { str: string; transform: number[] }[] }>;
+};
+
+/**
+ * pdf-parse joins all pages into one string with no page separators, so we
+ * capture each page's text via the pagerender hook instead. The line-joining
+ * logic mirrors pdf-parse's default renderer.
+ */
+async function extractPages(buf: Buffer): Promise<string[]> {
+  const pages: string[] = [];
+  await pdfParse(buf, {
+    pagerender: async (pageData: PageData) => {
+      const { items } = await pageData.getTextContent();
+      let lastY: number | undefined;
+      let text = '';
+      for (const item of items) {
+        text += lastY === undefined || lastY === item.transform[5] ? item.str : '\n' + item.str;
+        lastY = item.transform[5];
+      }
+      pages[pageData.pageIndex] = text;
+      return text;
+    },
+  });
+  return pages;
+}
+
 async function loadAndChunkPdf(filePath: string): Promise<Chunk[]> {
   const source = path.basename(filePath);
   const buf = await fs.readFile(filePath);
-  const parsed = await pdfParse(buf);
-  const pages = parsed.text.split('\f');
+  const pages = await extractPages(buf);
   const chunks: Chunk[] = [];
   pages.forEach((pageText, pageIdx) => {
-    if (pageText.trim().length === 0) return;
+    if (!pageText || pageText.trim().length === 0) return;
     chunks.push(...chunkText(pageText.trim(), pageIdx + 1, source));
   });
   return chunks;
@@ -102,6 +129,11 @@ async function main() {
     vector: embeddings[i],
     metadata: { text: c.text, page: c.page, source: c.source },
   }));
+
+  // Clear the index so chunks from a previous seed (e.g. with a different
+  // chunk count) don't linger. Done after embedding to keep the empty window short.
+  console.log('Resetting index…');
+  await index.reset();
 
   console.log(`Upserting ${records.length} chunks to Upstash Vector…`);
   // Upstash supports up to 1000 vectors per upsert; chunk if needed.

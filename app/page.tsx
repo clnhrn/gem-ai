@@ -5,8 +5,95 @@ import { useCallback, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-type Source = { text?: string; page?: number; source?: string; score?: number };
+type Source = { id?: number; text?: string; page?: number; source?: string; title?: string; score?: number };
 type Theme = 'system' | 'light' | 'dark';
+
+// Matches inline citations like [2] or [1, 3], but not markdown links [text](url).
+const CITATION_RE = /\[(\d+(?:\s*,\s*\d+)*)\](?!\()/g;
+
+function citedIds(content: string): Set<number> {
+  const ids = new Set<number>();
+  for (const [, nums] of content.matchAll(CITATION_RE)) {
+    nums.split(',').forEach((n) => ids.add(Number(n.trim())));
+  }
+  return ids;
+}
+
+/** Turn [n] markers into #cite-n links so ReactMarkdown can render them as chips. */
+function linkCitations(content: string): string {
+  return content.replace(CITATION_RE, (_, nums: string) =>
+    nums
+      .split(',')
+      .map((n) => `[${n.trim()}](#cite-${n.trim()})`)
+      .join(''),
+  );
+}
+
+const markdownComponents = {
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) =>
+    href?.startsWith('#cite-') ? (
+      <sup className="ml-0.5 inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded text-[10px] font-semibold no-underline text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/40">
+        {children}
+      </sup>
+    ) : (
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    ),
+};
+
+function SourceCard({ src }: { src: Source }) {
+  return (
+    <details className="group rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
+      <summary className="flex items-center gap-2 px-3 py-1.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-100/80 dark:hover:bg-slate-700/40 rounded-lg transition-colors">
+        <span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/40 rounded-md px-1.5 py-0.5 tabular-nums">
+          {src.id}
+        </span>
+        <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate flex-1">
+          {src.title ?? src.source ?? 'unknown'}
+          <span className="font-normal text-slate-400 dark:text-slate-500 tabular-nums"> · p.{src.page ?? '?'}</span>
+        </span>
+        <svg className="w-3 h-3 text-slate-400 dark:text-slate-500 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        </svg>
+      </summary>
+      <p className="px-3 pb-2.5 pt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line">{src.text}</p>
+    </details>
+  );
+}
+
+function SourceList({ sources, content }: { sources: Source[]; content: string }) {
+  const ids = citedIds(content);
+  const cited = sources.filter((s) => s.id !== undefined && ids.has(s.id));
+  const others = sources.filter((s) => !cited.includes(s));
+
+  return (
+    <div className="max-w-[85%] w-full space-y-1">
+      {cited.length > 0 && (
+        <>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">Sources</p>
+          {cited.map((src) => (
+            <SourceCard key={src.id} src={src} />
+          ))}
+        </>
+      )}
+      {others.length > 0 && (
+        <details>
+          <summary className="cursor-pointer text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
+            {cited.length > 0
+              ? `${others.length} other retrieved passage${others.length === 1 ? '' : 's'}`
+              : `${others.length} retrieved passage${others.length === 1 ? '' : 's'}`}
+          </summary>
+          <div className="mt-1 space-y-1">
+            {others.map((src) => (
+              <SourceCard key={src.id} src={src} />
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 
 const SUGGESTED_PROMPTS = [
   { label: 'Hope Diamond', text: 'What is the Hope Diamond?' },
@@ -192,53 +279,19 @@ export default function Page() {
                   ) : m.content ? (
                     <div className="flex justify-start flex-col items-start gap-2">
                       <div className="rounded-2xl rounded-bl-md bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 px-4 py-3 max-w-[85%] shadow-sm prose prose-sm prose-slate dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-teal-600 dark:prose-a:text-teal-400 max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {m.content}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {linkCitations(m.content)}
                         </ReactMarkdown>
                       </div>
 
-                      {m.toolInvocations?.map(
-                        (inv) =>
-                          inv.state === 'result' &&
-                          inv.toolName === 'getInformation' && (
-                            <details
-                              key={inv.toolCallId}
-                              className="max-w-[85%] w-full"
-                            >
-                              <summary className="cursor-pointer text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors flex items-center gap-1">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                </svg>
-                                {(inv.result as Source[]).length} sources
-                              </summary>
-                              <div className="mt-2 space-y-1.5">
-                                {(inv.result as Source[]).map((src, i) => (
-                                  <div
-                                    key={i}
-                                    className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 p-3"
-                                  >
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                      <span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/40 rounded-md px-1.5 py-0.5 uppercase tracking-wide">
-                                        p.{src.page ?? '?'}
-                                      </span>
-                                      <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate flex-1">
-                                        {src.source ?? 'unknown'}
-                                      </span>
-                                      {typeof src.score === 'number' && (
-                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">
-                                          {(src.score * 100).toFixed(0)}%
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
-                                      {src.text}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </details>
-                          ),
-                      )}
+                      {(() => {
+                        const sources = (m.toolInvocations ?? []).flatMap((inv) =>
+                          inv.state === 'result' && inv.toolName === 'getInformation'
+                            ? (inv.result as Source[])
+                            : [],
+                        );
+                        return sources.length > 0 && <SourceList sources={sources} content={m.content} />;
+                      })()}
                     </div>
                   ) : null}
                 </li>
