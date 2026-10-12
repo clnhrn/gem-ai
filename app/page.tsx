@@ -44,20 +44,21 @@ const markdownComponents = {
 
 function SourceCard({ src }: { src: Source }) {
   return (
-    <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 p-3">
-      <div className="flex items-center gap-2 mb-1.5">
+    <details className="group rounded-lg bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
+      <summary className="flex items-center gap-2 px-3 py-1.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-100/80 dark:hover:bg-slate-700/40 rounded-lg transition-colors">
         <span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/40 rounded-md px-1.5 py-0.5 tabular-nums">
           {src.id}
         </span>
         <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate flex-1">
           {src.title ?? src.source ?? 'unknown'}
+          <span className="font-normal text-slate-400 dark:text-slate-500 tabular-nums"> · p.{src.page ?? '?'}</span>
         </span>
-        <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">
-          p.{src.page ?? '?'}
-        </span>
-      </div>
-      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">{src.text}</p>
-    </div>
+        <svg className="w-3 h-3 text-slate-400 dark:text-slate-500 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        </svg>
+      </summary>
+      <p className="px-3 pb-2.5 pt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line">{src.text}</p>
+    </details>
   );
 }
 
@@ -67,7 +68,7 @@ function SourceList({ sources, content }: { sources: Source[]; content: string }
   const others = sources.filter((s) => !cited.includes(s));
 
   return (
-    <div className="max-w-[85%] w-full space-y-1.5">
+    <div className="max-w-[85%] w-full space-y-1">
       {cited.length > 0 && (
         <>
           <p className="text-xs font-medium text-slate-400 dark:text-slate-500">Sources</p>
@@ -83,7 +84,7 @@ function SourceList({ sources, content }: { sources: Source[]; content: string }
               ? `${others.length} other retrieved passage${others.length === 1 ? '' : 's'}`
               : `${others.length} retrieved passage${others.length === 1 ? '' : 's'}`}
           </summary>
-          <div className="mt-2 space-y-1.5">
+          <div className="mt-1 space-y-1">
             {others.map((src) => (
               <SourceCard key={src.id} src={src} />
             ))}
