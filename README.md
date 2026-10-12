@@ -1,6 +1,8 @@
 <h1 align="center">💎 GemAI</h1>
 <p align="center">A streaming RAG chatbot that answers questions about gemstones using USGS publications and the Smithsonian gem collection.<br>Built with <a href="https://nextjs.org/">Next.js 15</a>, the <a href="https://sdk.vercel.ai/">Vercel AI SDK</a>, and <a href="https://upstash.com/docs/vector">Upstash Vector</a>.</p>
 
+<p align="center"><strong><a href="https://gem-ai-five.vercel.app">▶ Try the live app: gem-ai-five.vercel.app</a></strong></p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js 15">
   <img src="https://img.shields.io/badge/Vercel_AI_SDK-4-blue?logo=vercel" alt="Vercel AI SDK">
