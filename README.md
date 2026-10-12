@@ -101,12 +101,15 @@ npm run dev
 # open http://localhost:3000
 ```
 
-Try asking:
+## Demo questions
 
-- *"What is the Hope Diamond?"*
-- *"How do you identify a sapphire?"*
-- *"What gemstones are found in Montana?"*
-- *"What makes a mineral a gemstone?"*
+| Question | What it shows |
+| --- | --- |
+| *What is the largest topaz in the Smithsonian collection?* | Catalog lookup: 7,725 carats, yellow, from Brazil, with a citation. The old character splitter missed it. |
+| *What is the hardness of opal?* | Two sources that agree (5½–6½ Mohs), each cited inline. |
+| *Where is tanzanite mined?* | Declines a question the corpus doesn't cover instead of answering from general knowledge. |
+| *hi there* | Small talk: a short reply, no search. |
+| *How do I bake sourdough bread?* | Off-topic: a polite refusal, no search. |
 
 Answers stream into the chat with inline citations like [1]. The passages the answer cites are listed under it with their document title and page number; the remaining retrieved passages are in a collapsible section.
 
