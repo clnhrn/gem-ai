@@ -13,16 +13,49 @@ import { z } from 'zod';
 
 const index = new Index();
 
+const MAX_USER_CHARS = 4000;
+// Assistant messages come back from the client as chat history. A 1024-token
+// answer can exceed 4000 characters, so they get a much higher ceiling.
+const MAX_ASSISTANT_CHARS = 12_000;
+// Hard cap on what a request may carry; older turns beyond MAX_HISTORY are
+// dropped before calling the model rather than rejected.
+const MAX_MESSAGES = 200;
+const MAX_HISTORY = 20;
+
+// Only user and assistant turns are accepted: the system prompt is set here,
+// never by the client.
 const messageSchema = z.object({
   messages: z
     .array(
-      z.object({
-        role: z.enum(['user', 'assistant', 'system']),
-        content: z.string().max(4000),
-      })
+      z.discriminatedUnion('role', [
+        z.object({ role: z.literal('user'), content: z.string().max(MAX_USER_CHARS) }),
+        z.object({ role: z.literal('assistant'), content: z.string().max(MAX_ASSISTANT_CHARS) }),
+      ])
     )
-    .max(50),
+    .min(1)
+    .max(MAX_MESSAGES),
 });
+
+/** Keep the most recent turns, starting from a user message. */
+function recentHistory<T extends { role: string }>(messages: T[]): T[] {
+  const recent = messages.slice(-MAX_HISTORY);
+  const firstUser = recent.findIndex((m) => m.role === 'user');
+  return firstUser > 0 ? recent.slice(firstUser) : recent;
+}
+
+/** A message the chat UI can show as-is (useChat surfaces the response body as the error). */
+function validationError(error: z.ZodError): string {
+  const tooLong = error.issues.find(
+    (issue) => issue.code === 'too_big' && issue.path.at(-1) === 'content',
+  );
+  if (tooLong) {
+    return `Your message is too long. Please keep it under ${MAX_USER_CHARS.toLocaleString('en-US')} characters.`;
+  }
+  if (error.issues.some((issue) => issue.code === 'too_big' && issue.path.length === 1)) {
+    return 'This conversation is too long. Please start a new chat.';
+  }
+  return 'Invalid request.';
+}
 
 const SOURCE_TITLES: Record<string, string> = {
   'usgs-natural-gemstones.pdf': 'USGS — Natural Gemstones',
@@ -56,9 +89,9 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = messageSchema.safeParse(body);
   if (!parsed.success) {
-    return new Response('Invalid request', { status: 400 });
+    return new Response(validationError(parsed.error), { status: 400 });
   }
-  const { messages } = parsed.data;
+  const messages = recentHistory(parsed.data.messages);
 
   // Source numbers continue across tool calls within one response so [n]
   // citations stay unambiguous if the model searches more than once.
