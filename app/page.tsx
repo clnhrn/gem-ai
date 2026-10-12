@@ -5,7 +5,20 @@ import { useCallback, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-type Source = { id?: number; text?: string; page?: number; source?: string; title?: string; score?: number };
+type Source = {
+  id?: number;
+  text?: string;
+  page?: number;
+  pageEnd?: number | null;
+  source?: string;
+  title?: string;
+  score?: number;
+};
+
+function pageLabel(src: Source): string {
+  if (src.page == null) return 'p.?';
+  return src.pageEnd && src.pageEnd > src.page ? `pp.${src.page}–${src.pageEnd}` : `p.${src.page}`;
+}
 type Theme = 'system' | 'light' | 'dark';
 
 // Matches inline citations like [2] or [1, 3], but not markdown links [text](url).
@@ -51,7 +64,7 @@ function SourceCard({ src }: { src: Source }) {
         </span>
         <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate flex-1">
           {src.title ?? src.source ?? 'unknown'}
-          <span className="font-normal text-slate-400 dark:text-slate-500 tabular-nums"> · p.{src.page ?? '?'}</span>
+          <span className="font-normal text-slate-400 dark:text-slate-500 tabular-nums"> · {pageLabel(src)}</span>
         </span>
         <svg className="w-3 h-3 text-slate-400 dark:text-slate-500 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
