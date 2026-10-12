@@ -6,7 +6,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js 15">
   <img src="https://img.shields.io/badge/Vercel_AI_SDK-4-blue?logo=vercel" alt="Vercel AI SDK">
-  <img src="https://img.shields.io/badge/GPT--4o--mini-OpenAI-412991?logo=openai" alt="GPT-4o-mini">
+  <img src="https://img.shields.io/badge/GPT--4.1--mini-OpenAI-412991?logo=openai" alt="GPT-4.1-mini">
   <img src="https://img.shields.io/badge/Upstash-Vector-00e9a3?logo=upstash" alt="Upstash Vector">
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
@@ -32,7 +32,7 @@ gem-ai/
 │   ├── layout.tsx                          # Root layout with OG metadata & theme script
 │   ├── page.tsx                            # Chat UI — useChat, sources, theme toggle
 │   ├── icon.svg
-│   └── api/chat/route.ts                   # Route handler — RAG-as-tool-call (gpt-4o-mini)
+│   └── api/chat/route.ts                   # Route handler — RAG-as-tool-call (gpt-4.1-mini)
 ├── lib/
 │   └── seed.ts                             # Chunks & embeds PDFs into Upstash Vector
 ├── data/
@@ -117,7 +117,7 @@ The knowledge base consists of three public-domain PDFs about gemstones:
 | --- | --- |
 | Framework | Next.js 15 (App Router) |
 | AI SDK | Vercel AI SDK v4 (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`) |
-| Model | GPT-4o-mini |
+| Model | GPT-4.1-mini (temperature 0) |
 | Embeddings | text-embedding-3-small |
 | Vector DB | Upstash Vector |
 | Styling | Tailwind CSS + `@tailwindcss/typography` |
