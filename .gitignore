@@ -11,3 +11,5 @@ out/
 
 docs/
 .venv/
+
+chunks.dry-run.json

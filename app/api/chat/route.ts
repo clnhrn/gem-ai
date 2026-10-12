@@ -107,6 +107,7 @@ Rules:
               id: ++sourceCount,
               text: (h.metadata?.text as string) ?? '',
               page: (h.metadata?.page as number) ?? null,
+              pageEnd: (h.metadata?.pageEnd as number) ?? null,
               source,
               title: SOURCE_TITLES[source] ?? source,
               score: h.score,

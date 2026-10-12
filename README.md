@@ -75,7 +75,14 @@ python scripts/download_pdfs.py
 npm run seed
 ```
 
-The seed script reads all PDFs in `data/`, extracts text page by page, chunks each page (~800 chars with 100-char overlap), embeds with `text-embedding-3-small`, and upserts to Upstash Vector with the page number in each chunk's metadata. The index is reset before upserting, so each run fully replaces its contents.
+The seed script reads all PDFs in `data/`, chunks them according to each document's structure, embeds with `text-embedding-3-small`, and upserts to Upstash Vector with the start and end page in each chunk's metadata. The index is reset before upserting, so each run fully replaces its contents. Run `npx tsx lib/seed.ts --dry-run` to write the chunks to `chunks.dry-run.json` for inspection without embedding anything.
+
+Chunking:
+
+- **Prose** is split into ~800-character windows with ~100-character overlap, starting and ending on sentence boundaries. Chunks can cross page breaks.
+- **USGS fact sheet:** each of the 20 gem entries (hardness, formula, specific gravity, varieties) is its own chunk, so a gem's properties are never split or mixed with another gem's.
+- **Smithsonian book:** each chunk is prefixed with its section heading (e.g. `CORUNDUM — VARIETIES`). The collection catalog and properties table are split only between rows, and each catalog chunk names its gem and explains the columns, so a row like `44.5, blue (The Hope), India` stays meaningful.
+- **Cleanup:** words hyphenated across lines are re-joined; photo captions, page numbers and Project Gutenberg boilerplate are dropped.
 
 ## Run
 
